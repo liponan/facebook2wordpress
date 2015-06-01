@@ -1,6 +1,8 @@
 # encoding=utf-8 
 require 'open-uri'
 require 'json'
+require 'date'
+require 'time'
 require 'to_xml'
 
 if ARGV.length > 0
@@ -57,7 +59,13 @@ data_hash["data"].each do |datum|
 	# post_hash["item"]["content:encoded"] = "<![CDATA[" + datum["message"] + "]]>"
 	post_hash["content:encoded"] = "<![CDATA[" + datum["message"] + "]]>"
 	# post_hash["item"]["pubDate"] = datum["created_time"]
-	post_hash["pubDate"] = datum["created_time"]
+	created_time = Time.utc(datum["created_time"][0..3], \
+		datum["created_time"][5..6],\
+		datum["created_time"][8..9],\
+		datum["created_time"][11..12],\
+		datum["created_time"][14..15],\
+		datum["created_time"][17..18])
+	post_hash["pubDate"] = created_time.strftime('%F %T')
 	# post_hash["item"]["dc:creater"] = datum["admin_creator"]["name"]
 	post_hash["dc_creator"] = datum["admin_creator"]["name"]
 	post_hash["wp:post_type"] = "post"
