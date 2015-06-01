@@ -28,13 +28,15 @@ data_hash = JSON.parse(json.read)
 # xml_hash = {"channel"=>{"item"=>[]}}
 xml_hash = {"channel"=>[]}
 
-pat = /【(.+)】/
+pat1 = /【(.+)】/
+pat2 = /#([^\s0-9～]+)/
 
 count = 0;
 
 data_hash["data"].each do |datum|
 	
-	title = datum["message"].scan(pat).to_a
+	title = datum["message"].scan(pat1).to_a
+	cats  = datum["message"].scan(pat2).to_a
 	# puts title[0]
 	# puts datum["message"]
 	
@@ -79,6 +81,13 @@ data_hash["data"].each do |datum|
 	post_hash["wp:status"] = "publish"
 	obj_url = "https://graph.facebook.com/" + datum["id"] + "/?fields=full_picture"
 	obj_url = obj_url + '&access_token=' + token
+	
+	# for cat in cats
+	# 	post_hash['category domain="category" nicename="'+cat[0]+'"'] = cat[0]
+	# end
+
+
+
 	json = open(obj_url)
 	obj_hash = JSON.parse(json.read)
 
