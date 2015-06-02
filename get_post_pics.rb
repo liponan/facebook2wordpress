@@ -103,7 +103,7 @@ data_hash["data"].each do |datum|
 	# obj_hash["full_picture"]
 	
 	unless datum["type"] == "status"
-		open("dailycold_archive/" + datum["id"]+".jpg", 'wb') do |file|
+		open("pics_archive/" + datum["id"]+".jpg", 'wb') do |file|
 			file << open(obj_hash["full_picture"]).read
 		end
 	end
