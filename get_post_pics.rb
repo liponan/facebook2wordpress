@@ -3,6 +3,8 @@ require 'open-uri'
 require 'json'
 require 'date'
 require 'time'
+require './utc2local'
+require './fb2wp'
 require 'to_xml'
 
 if ARGV.length > 0
@@ -61,43 +63,50 @@ data_hash["data"].each do |datum|
 
 	puts post_hash["title"]
 
-	# post_hash["item"]["content:encoded"] = "<![CDATA[" + datum["message"] + "]]>"
-	post_hash["content:encoded"] = "<![CDATA[" + datum["message"] + "]]>"
-	# post_hash["item"]["pubDate"] = datum["created_time"]
-	created_time = Time.utc(datum["created_time"][0..3], \
-		datum["created_time"][5..6],\
-		datum["created_time"][8..9],\
-		datum["created_time"][11..12],\
-		datum["created_time"][14..15],\
-		datum["created_time"][17..18])
-	post_hash["pubDate"] = created_time.strftime('%F %T')
-	# post_hash["item"]["dc:creater"] = datum["admin_creator"]["name"]
-	if datum["admin_creator"].nil?
-		post_hash["dc_creator"] = "每日一冷"
-	else
-		post_hash["dc_creator"] = datum["admin_creator"]["name"]
-	end
-	post_hash["wp:post_type"] = "post"
-	post_hash["wp:status"] = "publish"
+
 	obj_url = "https://graph.facebook.com/" + datum["id"] + "/?fields=full_picture"
 	obj_url = obj_url + '&access_token=' + token
-	
-	# for cat in cats
-	# 	post_hash['category domain="category" nicename="'+cat[0]+'"'] = cat[0]
-	# end
-
-
 
 	json = open(obj_url)
 	obj_hash = JSON.parse(json.read)
 
+
+	# post_hash["item"]["content:encoded"] = "<![CDATA[" + datum["message"] + "]]>"
+	
+	post_hash["content:encoded"] = "<![CDATA["
+	unless obj_hash["full_picture"].nil?
+		post_hash["content:encoded"] = post_hash["content:encoded"] \
+		+ '<img src="' + "../../../wp-content/uploads/archive/" \
+		+ datum["id"]+".jpg" + '">' + "\n"
+	end
+	post_hash["content:encoded"] = post_hash["content:encoded"] \
+	+ datum["message"] + "]]>"
+
+	post_hash["pubDate"] = utc2local(datum["created_time"])
+	post_hash["wp:post_date"] = utc2local(datum["created_time"])
+	# post_hash["item"]["dc:creater"] = datum["admin_creator"]["name"]
+	if datum["admin_creator"].nil?
+		post_hash["dc_creator"] = "dailycold"
+	else
+		post_hash["dc_creator"] = fb2wp( datum["admin_creator"]["name"] )
+	end
+	post_hash["wp:post_type"] = "post"
+	post_hash["wp:status"] = "publish"
+	
+	
+	# for cat in cats
+	# 	post_hash['category domain="post_tag" nicename="'+cat[0]+'"'] = cat[0]
+	# end
+
+
+
 	# obj_hash["full_picture"]
 	
-	# unless datum["type"] == "status"
-	# 	open(datum["id"]+".jpg", 'wb') do |file|
-	# 		file << open(obj_hash["full_picture"]).read
-	# 	end
-	# end
+	unless datum["type"] == "status"
+		open("dailycold_archive/" + datum["id"]+".jpg", 'wb') do |file|
+			file << open(obj_hash["full_picture"]).read
+		end
+	end
 
 	# xml_hash["channel"]["item"] << post_hash
 	xml_hash["channel"] << post_hash
@@ -110,7 +119,7 @@ end
 xml = xml_hash.to_xml
 # xml = xml_hash.to_json.to_xml
 # puts xml
-open("dailycold_archieve.xml", 'wb') do |file|
+open("dailycold_archive.xml", 'wb') do |file|
 	open("xml_template.txt", 'r') do |tmp|
 		file << tmp.read
 	end
