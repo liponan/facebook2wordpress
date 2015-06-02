@@ -7,6 +7,8 @@ require './utc2local'
 require './fb2wp'
 require 'to_xml'
 
+get_pic = false
+
 if ARGV.length > 0
 	lim = ARGV[0].to_i
 else
@@ -28,7 +30,11 @@ json = open(url)
 
 data_hash = JSON.parse(json.read)
 # xml_hash = {"channel"=>{"item"=>[]}}
-xml_hash = {"channel"=>[]}
+
+
+authors = {}
+
+# xml_hash = {"channel"=>[]}
 
 pat1 = /【(.+)】/
 pat2 = /#([^\s0-9～]+)/
@@ -36,14 +42,31 @@ pat2 = /#([^\s0-9～]+)/
 count = 0;
 
 data_hash["data"].each do |datum|
+
+	# intiate a hash for single post
+	post_hash = {"item"=>{}}
+	post_hash = {}
+
+	# detect author
+
+	if datum["admin_creator"].nil?
+		creator = "dailycold"
+	else
+		creator = fb2wp( datum["admin_creator"]["name"] )
+	end
+	post_hash["dc_creator"] = creator
+
+	if authors[creator].nil?
+		authors[creator] = {"channel"=>[]}
+	end
+
 	
 	title = datum["message"].scan(pat1).to_a
 	cats  = datum["message"].scan(pat2).to_a
 	# puts title[0]
 	# puts datum["message"]
 	
-	post_hash = {"item"=>{}}
-	post_hash = {}
+	
 	# post_hash = {"item"=>{
 	# 	"title"=>"",
 	# 	# "link"=>"",
@@ -101,29 +124,37 @@ data_hash["data"].each do |datum|
 
 
 	# obj_hash["full_picture"]
-	
-	unless datum["type"] == "status"
-		open("pics_archive/" + datum["id"]+".jpg", 'wb') do |file|
-			file << open(obj_hash["full_picture"]).read
+	if get_pic
+		unless datum["type"] == "status"
+			open("pics_archive/" + datum["id"]+".jpg", 'wb') do |file|
+				file << open(obj_hash["full_picture"]).read
+			end
 		end
 	end
 
 	# xml_hash["channel"]["item"] << post_hash
-	xml_hash["channel"] << post_hash
+	authors[creator]["channel"] << post_hash
 
 
 	# puts post_hash
 end
 
 # puts xml_hash
-xml = xml_hash.to_xml
+
 # xml = xml_hash.to_json.to_xml
 # puts xml
-open("dailycold_archive.xml", 'wb') do |file|
-	open("xml_template.txt", 'r') do |tmp|
-		file << tmp.read
+
+authors.each_key { |key| 
+	xml = authors[key].to_xml
+	open("post_archive/" + key + ".xml", 'wb') do |file|
+		open("xml_template.xml", 'r') do |tmp|
+			file << tmp.read
+		end
+		file << "\t<wp:author>" \
+		+ "<wp:author_login>" + key +  "</wp:author_login>" \
+		+ "</wp:author>\n\n"
+		file << xml[18..(xml.length-1)]
+		file << "</rss>"
 	end
-	file << xml[18..(xml.length-1)]
-	file << "</rss>"
-end
+}
 
