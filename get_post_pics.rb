@@ -114,7 +114,7 @@ data_hash["data"].each do |datum|
 		post_hash["dc_creator"] = fb2wp( datum["admin_creator"]["name"] )
 	end
 	post_hash["wp:post_type"] = "post"
-	post_hash["wp:status"] = "publish"
+	# post_hash["wp:status"] = "publish"
 	
 	
 	# for cat in cats
@@ -145,6 +145,9 @@ end
 # puts xml
 
 authors.each_key { |key| 
+	File.open("post_archive/" + key + ".json", 'wb') do |f|
+  		f.write(authors[key].to_json)
+	end
 	xml = authors[key].to_xml
 	open("post_archive/" + key + ".xml", 'wb') do |file|
 		open("xml_template.xml", 'r') do |tmp|
