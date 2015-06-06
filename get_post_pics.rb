@@ -7,7 +7,7 @@ require './utc2local'
 require './fb2wp'
 require 'to_xml'
 
-get_pic = true
+get_pic = false
 
 if ARGV.length > 0
 	lim = ARGV[0].to_i
@@ -101,7 +101,11 @@ while count < lim
 			+ datum["id"]+".jpg" + '">' + "\n"
 		end
 		post_hash["content:encoded"] = post_hash["content:encoded"] \
-		+ datum["message"] + "]]>"
+		+ datum["message"] \
+		+ "\n\n" + '本文曾刊登於 <a href="https://www.facebook.com/' \
+		+ datum["id"].sub("_","/posts/") + '" target="_blank>"' \
+		+ '每日一冷</a>' \
+		+ ']]>'
 
 		post_hash["pubDate"] = utc2local(datum["created_time"])
 		post_hash["wp:post_date"] = utc2local(datum["created_time"])
@@ -113,6 +117,7 @@ while count < lim
 		end
 		post_hash["wp:post_type"] = "post"
 		# post_hash["wp:status"] = "publish"
+		post_hash["wp:status"] = "private" 
 		
 		
 		# for cat in cats
@@ -132,7 +137,6 @@ while count < lim
 			end
 		end
 
-		# xml_hash["channel"]["item"] << post_hash
 		authors[creator]["channel"] << post_hash
 
 		count = count + 1
