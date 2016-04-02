@@ -166,6 +166,10 @@ puts "counts = " + count.to_s
 # xml = xml_hash.to_json.to_xml
 # puts xml
 
+unless Dir.exists?("post_archive/")
+	Dir.mkdir("post_archive/")
+end
+
 authors.each_key { |key| 
 	puts "Exporting " + "post_archive/" + key + ".json"
 	File.open("post_archive/" + key + ".json", 'wb') do |f|
