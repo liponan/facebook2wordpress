@@ -22,5 +22,11 @@ ruby get_post_pics.rb < token
 
 on terminal and see if it works. If everything works correctly, it will get the lastest post on your page and export it XML files named after author names.
 
+If the test aobve was successful, run
+```
+ruby get_post_pics.rb 999 < token
+```
+to get ALL of your posts. Change the number 999 if you have even more posts than that!
+
 ### Step 4
 Enter your WP site's control panel. Install WP import tool if it hasn't been there. Import XML files. 
