@@ -4,7 +4,6 @@ require 'json'
 require 'date'
 require 'time'
 require './utc2local'
-require './fb2wp'
 require 'to_xml'
 
 get_pic = false
@@ -15,9 +14,9 @@ else
 	lim = 1
 end
 
-page_id = '413364295402646'
-# token = 'CAACEdEose0cBAL7ZAFaYGYt6WEDlSdgolMUG3EJZCA1Oa5SZBsdBso8ZCT7aFBQWYMmpgcpAH28624POqmbvaTDZBdHG9GeAKmDRejoQ68IoyWbz4OVB5WyBvRJDw4r3mZBjD2UELM6BmkZCRJWxUUZCzZBXbW4EXZCtZAzPUcKSd8fbozdjq9ctswucFJtMClPovRmIyGJTgKFwAF5KJjy9yNE'
-token = STDIN.read
+page_id = '123456' # change to your page id (which only admins know)
+default_creator = "Name of Master"
+token = STDIN.read # read TOKEN from command line 
 
 if lim < 250
 	url = 'https://graph.facebook.com/v2.3/' + page_id + '/posts/?fields=id,message,type,object_id,created_time,admin_creator&limit=' + lim.to_s
@@ -64,9 +63,9 @@ while count < lim
 		# detect author
 
 		if datum["admin_creator"].nil?
-			creator = "dailycold"
+			creator = default_creator
 		else
-			creator = fb2wp( datum["admin_creator"]["name"] )
+			creator = datum["admin_creator"]["name"]
 		end
 		post_hash["dc_creator"] = creator
 
@@ -74,14 +73,14 @@ while count < lim
 			authors[creator] = {"channel"=>[]}
 		end
 
-		title = datum["message"].scan(pat1).to_a
+		title = datum["message"].scan(pat1).to_a # edit pat1 to identify title
 		cats  = datum["message"].scan(pat2).to_a
 
 		if title.length > 0
 			post_hash["title"] = title[0][0]
 		else
 			untitled = untitled + 1
-			post_hash["title"] = "未命名-" + untitled.to_s
+			post_hash["title"] = "Untitled " + untitled.to_s
 		end
 
 		puts post_hash["title"]
@@ -106,18 +105,20 @@ while count < lim
 		+ datum["message"] \
 		+ "\n\n" + '本文曾刊登於 <a href="https://www.facebook.com/' \
 		+ datum["id"].sub("_","/posts/") + '" target="_blank">' \
-		+ '每日一冷</a>' \
+		+ 'Facebook</a>' \
 		+ ']]>'
 
 		post_hash["pubDate"] = utc2local(datum["created_time"])
 		post_hash["wp:post_date"] = utc2local(datum["created_time"])
 		# post_hash["item"]["dc:creater"] = datum["admin_creator"]["name"]
 		if datum["admin_creator"].nil?
-			post_hash["dc_creator"] = "dailycold"
+			post_hash["dc_creator"] = default_creator
 		else
-			post_hash["dc_creator"] = fb2wp( datum["admin_creator"]["name"] )
+			post_hash["dc_creator"] = datum["admin_creator"]["name"]
 		end
 		post_hash["wp:post_type"] = "post"
+		
+
 		# post_hash["wp:status"] = "publish"
 		post_hash["wp:status"] = "private" 
 		
@@ -130,6 +131,9 @@ while count < lim
 
 		# obj_hash["full_picture"]
 		if get_pic
+			unless Dir.exists?("pics_archive")
+				Dir.mkdir("pics_archive")
+			end
 			unless datum["type"] == "status" || datum["type"] == "link"
 				unless obj_hash["full_picture"].nil?
 					open("pics_archive/" + datum["id"]+".jpg", 'wb') do |file|
