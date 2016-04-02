@@ -27,9 +27,11 @@ end
 
 url = url + '&access_token=' + token
 
-# puts url
+puts url
 
 json = open(url)
+
+puts "get first json"
 
 data_hash = JSON.parse(json.read)
 # xml_hash = {"channel"=>{"item"=>[]}}
@@ -103,7 +105,7 @@ while count < lim
 		post_hash["content:encoded"] = post_hash["content:encoded"] \
 		+ datum["message"] \
 		+ "\n\n" + '本文曾刊登於 <a href="https://www.facebook.com/' \
-		+ datum["id"].sub("_","/posts/") + '" target="_blank>"' \
+		+ datum["id"].sub("_","/posts/") + '" target="_blank">' \
 		+ '每日一冷</a>' \
 		+ ']]>'
 
